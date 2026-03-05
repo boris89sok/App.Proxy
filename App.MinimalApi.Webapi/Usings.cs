@@ -1,0 +1,14 @@
+﻿global using Carter;
+global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.Mvc.Versioning;
+global using Serilog.Enrichers.AspnetcoreHttpcontext;
+global using System.Reflection;
+global using App.MinimalApi.Webapi.Exceptions;
+global using App.MinimalApi.Service;
+global using App.MinimalApi.Model.Models;
+global using App.MinimalApi.Service.Services;
+global using Microsoft.AspNetCore.Diagnostics;
+global using Refit;
+global using Serilog.Context;
+global using System.Diagnostics;
+global using System.Net;

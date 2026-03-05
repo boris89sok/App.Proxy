@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="App.MinimalApi.Dal/App.MinimalApi.Dal.csproj" />
+  <Project Path="App.MinimalApi.Model/App.MinimalApi.Model.csproj" />
+  <Project Path="App.MinimalApi.Service/App.MinimalApi.Service.csproj" />
+  <Project Path="App.MinimalApi.Webapi/App.MinimalApi.Webapi.csproj" />
+</Solution>
