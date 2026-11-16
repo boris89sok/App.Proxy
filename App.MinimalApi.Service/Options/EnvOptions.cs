@@ -1,26 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace App.MinimalApi.Service.Options
+﻿namespace App.MinimalApi.Service.Options
 {
     /// <summary>
-    /// The application's single options class. It is bound from two configuration sections:
-    /// <list type="bullet">
-    /// <item><c>AppSettings:{Env}</c>: environment specific values (<see cref="ApiUrl"/>).</item>
-    /// <item><c>Proxy</c>: operational settings of the secure proxy. Contains no secrets.</item>
-    /// </list>
+    /// The application's single options class, bound from the <c>Proxy</c> configuration section
+    /// (operational settings of the secure proxy; contains no secrets).
     /// DEFECT FIX: ValidateDataAnnotations()/ValidateOnStart() were configured but the class had no
-    /// annotations, so a missing or malformed ApiUrl was never detected at startup.
+    /// annotations, so invalid values were never detected at startup.
     /// </summary>
     public class EnvOptions
     {
         public const string ProxySectionName = "Proxy";
-
-        public string Env { get; set; } = string.Empty;
-
-        [Required, Url]
-        public string ApiUrl { get; set; } = string.Empty;
-
-        // ----- Proxy section -----
 
         /// <summary>Hard cap for any request envelope, applied before the operation is known.</summary>
         [Range(1024, 10_485_760)]

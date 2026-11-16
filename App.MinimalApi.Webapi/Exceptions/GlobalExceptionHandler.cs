@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-
-namespace App.MinimalApi.Webapi.Exceptions
+﻿namespace App.MinimalApi.Webapi.Exceptions
 {
     /// <summary>
     /// Converts unhandled exceptions into the application's single, NON-SENSITIVE error contract
@@ -35,7 +33,7 @@ namespace App.MinimalApi.Webapi.Exceptions
                 BadHttpRequestException or ArgumentException => ProxyErrorCode.InvalidRequest,
                 DbUpdateConcurrencyException => ProxyErrorCode.ConfigurationConflict,
                 UnauthorizedAccessException => ProxyErrorCode.Forbidden,
-                HttpRequestException or ApiException => ProxyErrorCode.UpstreamUnavailable,
+                HttpRequestException => ProxyErrorCode.UpstreamUnavailable,
                 _ => ProxyErrorCode.InternalError
             };
             var status = ProxyErrors.StatusFor(code);

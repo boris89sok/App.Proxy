@@ -6,29 +6,6 @@ namespace App.MinimalApi.Tests;
 /// </summary>
 public sealed class LegacyDefectRegressionTests
 {
-    [Fact] // D-01: TLS certificate validation was disabled for the Refit client
-    public void Refit_client_primary_handler_keeps_certificate_validation()
-    {
-        using var handler = HttpClientExtension.CreatePrimaryHandler();
-
-        Assert.Null(handler.SslOptions.RemoteCertificateValidationCallback);
-    }
-
-    [Fact] // D-02: RawLoggingHandler read and logged the full response body
-    public async Task Raw_logging_handler_does_not_consume_the_response_body()
-    {
-        var content = new NonReadableContent();
-        var handler = new RawLoggingHandler(NullLogger<RawLoggingHandler>.Instance)
-        {
-            InnerHandler = new StubHandler(new HttpResponseMessage(HttpStatusCode.OK) { Content = content })
-        };
-
-        using var invoker = new HttpMessageInvoker(handler);
-        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://example.org/x?token=secret"), default);
-
-        Assert.False(content.WasRead);
-    }
-
     [Fact] // D-06: deleting a missing id threw ArgumentNullException (500) instead of a not-found result
     public async Task Generic_repository_delete_of_missing_id_throws_KeyNotFoundException()
     {
@@ -82,29 +59,6 @@ public sealed class LegacyDefectRegressionTests
         UpdatedAt = new DateTime(2026, 1, 1),
         RowVersion = new byte[8]
     };
-
-    private sealed class StubHandler(HttpResponseMessage response) : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(response);
-    }
-
-    private sealed class NonReadableContent : HttpContent
-    {
-        public bool WasRead { get; private set; }
-
-        protected override Task SerializeToStreamAsync(Stream stream, System.Net.TransportContext? context)
-        {
-            WasRead = true;
-            return Task.CompletedTask;
-        }
-
-        protected override bool TryComputeLength(out long length)
-        {
-            length = 0;
-            return false;
-        }
-    }
 }
 
 /// <summary>
