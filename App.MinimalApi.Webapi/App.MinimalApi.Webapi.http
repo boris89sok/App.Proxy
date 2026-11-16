@@ -1,6 +1,39 @@
-@App.MinimalApi.Webapi_HostAddress = http://localhost:5253
+### Secure Proxy samples. Generate values with:
+###   dotnet run --project tools/App.MinimalApi.DevTool -- secrets
+###   dotnet run --project tools/App.MinimalApi.DevTool -- token --signing-key <key>
+@host = http://localhost:5253
+@apiKey = <api key printed by "secrets">
+@token = <jwt printed by "token">
 
-GET {{App.MinimalApi.Webapi_HostAddress}}/weatherforecast/
-Accept: application/json
+### Valid operation
+POST {{host}}/api/proxy/execute
+Content-Type: application/json
+X-Api-Key: {{apiKey}}
+Authorization: Bearer {{token}}
+X-Request-Source: http-file
 
-###
+{ "clientId": "customer.get", "json": { "urlId": 5 } }
+
+### Rejected: caller tries to choose the destination (400 UnknownEnvelopeField, nothing forwarded)
+POST {{host}}/api/proxy/execute
+Content-Type: application/json
+X-Api-Key: {{apiKey}}
+Authorization: Bearer {{token}}
+
+{ "clientId": "customer.get", "json": { "urlId": 5 }, "url": "https://evil.example" }
+
+### Rejected: path traversal (400, nothing forwarded)
+POST {{host}}/api/proxy/execute
+Content-Type: application/json
+X-Api-Key: {{apiKey}}
+Authorization: Bearer {{token}}
+
+{ "clientId": "customer.get", "json": { "urlId": "../admin" } }
+
+### Encrypted operation (body produced by: DevTool encrypt --key <aes> --client-id customer.secure-get --json "{\"urlId\":42}")
+POST {{host}}/api/proxy/execute
+Content-Type: application/json
+X-Api-Key: {{apiKey}}
+Authorization: Bearer {{token}}
+
+{ "clientId": "customer.secure-get", "encrypted": { "nonce": "<b64>", "ciphertext": "<b64>", "tag": "<b64>" } }

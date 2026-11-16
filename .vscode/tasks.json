@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-webapi",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["build", "${workspaceFolder}/App.MinimalApi.Webapi/App.MinimalApi.Webapi.csproj", "/property:GenerateFullPaths=true"],
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "mock-upstream",
+      "detail": "Mock destination for customer.get / customer.secure-get on http://localhost:5001",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["run", "--project", "${workspaceFolder}/tools/App.MinimalApi.DevTool", "--", "mock-upstream", "--urls", "http://localhost:5001"],
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}

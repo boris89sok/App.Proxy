@@ -1,10 +1,10 @@
-﻿namespace App.MinimalApi.Dal.Infrastructure
+namespace App.MinimalApi.Dal.Infrastructure
 {
     public interface IGenericRepository<TEntity> where TEntity : class
     {
-        Task<IEnumerable<TEntity>> GetAllAsync();
+        Task<IEnumerable<TEntity>> GetAllAsync(CancellationToken cancellationToken = default);
 
-        Task<TEntity> GetByIdAsync(object id);
+        Task<TEntity?> GetByIdAsync(object id, CancellationToken cancellationToken = default);
 
         Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> where, string[] include = null);
 
@@ -14,13 +14,13 @@
 
         Task<IEnumerable<TEntity>> GetManyNoTrackingAsync(Expression<Func<TEntity, bool>> where, string[] include = null);
 
-        Task<TEntity> AddAsync(TEntity entity);
+        Task<TEntity> AddAsync(TEntity entity, CancellationToken cancellationToken = default);
 
         Task<TEntity> AddDetachedAsync(TEntity entity);
 
         Task AddRangeAsync(List<TEntity> entities);
 
-        Task UpdateAsync(TEntity entity);
+        Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default);
 
         Task UpdateDetachedAsync(TEntity entity);
 
@@ -28,7 +28,8 @@
 
         Task UpdateRangeAsync(List<TEntity> entities);
 
-        Task DeleteAsync(object id);
+        /// <exception cref="KeyNotFoundException">No entity with the given key exists.</exception>
+        Task DeleteAsync(object id, CancellationToken cancellationToken = default);
 
         Task RemoveRangeAsync(Expression<Func<TEntity, bool>> where);
 
@@ -72,6 +73,9 @@
 
         private readonly DbContextRepository _dbContext;
 
+        /// <summary>The unit of work, for queries specific to a derived repository.</summary>
+        protected DbContextRepository Context => _dbContext;
+
 
 
         public GenericRepository(DbContextRepository dbContext)
@@ -88,21 +92,21 @@
 
 
 
-        public async Task<IEnumerable<TEntity>> GetAllAsync()
+        public async Task<IEnumerable<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
 
         {
 
-            return await _dbContext.Set<TEntity>().ToListAsync();
+            return await _dbContext.Set<TEntity>().ToListAsync(cancellationToken);
 
         }
 
 
 
-        public async Task<TEntity> GetByIdAsync(object id)
+        public async Task<TEntity?> GetByIdAsync(object id, CancellationToken cancellationToken = default)
 
         {
 
-            return await _dbContext.Set<TEntity>().FindAsync(id);
+            return await _dbContext.Set<TEntity>().FindAsync(new[] { id }, cancellationToken);
 
         }
 
@@ -148,13 +152,13 @@
 
 
 
-        public async Task<TEntity> AddAsync(TEntity entity)
+        public async Task<TEntity> AddAsync(TEntity entity, CancellationToken cancellationToken = default)
 
         {
 
-            await _dbContext.Set<TEntity>().AddAsync(entity);
+            await _dbContext.Set<TEntity>().AddAsync(entity, cancellationToken);
 
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
 
 
@@ -196,17 +200,17 @@
 
 
 
-        public async Task UpdateAsync(TEntity entity)
+        public async Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
 
         {
 
-            _dbContext.ChangeTracker.Clear();
+            DetachTrackedDuplicate(entity);
 
 
 
             _dbContext.Set<TEntity>().Update(entity);
 
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
         }
 
@@ -216,7 +220,7 @@
 
         {
 
-            _dbContext.ChangeTracker.Clear();
+            DetachTrackedDuplicate(entity);
 
 
 
@@ -236,7 +240,7 @@
 
         {
 
-            _dbContext.ChangeTracker.Clear();
+            DetachTrackedDuplicate(entity);
 
 
 
@@ -268,7 +272,7 @@
 
         {
 
-            _dbContext.ChangeTracker.Clear();
+            foreach (var e in entities) DetachTrackedDuplicate(e);
 
 
 
@@ -280,16 +284,13 @@
 
 
 
-        public async Task DeleteAsync(object id)
-
+        public async Task DeleteAsync(object id, CancellationToken cancellationToken = default)
         {
-
-            var entity = await GetByIdAsync(id);
+            var entity = await GetByIdAsync(id, cancellationToken)
+                ?? throw new KeyNotFoundException($"{typeof(TEntity).Name} was not found.");
 
             _dbContext.Set<TEntity>().Remove(entity);
-
-            await _dbContext.SaveChangesAsync();
-
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
 
@@ -430,7 +431,7 @@
 
         {
 
-            _dbContext.ChangeTracker.Clear();
+            DetachTrackedDuplicate(entity);
 
             _dbContext.Set<TEntity>().Update(entity);
 
@@ -457,15 +458,10 @@
 
 
         public void Delete(object id)
-
         {
-
-            var entity = GetById(id);
-
+            var entity = GetById(id) ?? throw new KeyNotFoundException($"{typeof(TEntity).Name} was not found.");
             _dbContext.Set<TEntity>().Remove(entity);
-
             _dbContext.SaveChanges();
-
         }
 
 
@@ -483,6 +479,33 @@
         }
 
 
+
+        #endregion
+
+
+        #region Helpers
+
+        /// <summary>
+        /// Detaches an already tracked instance that has the same primary key as <paramref name="entity"/>,
+        /// so a detached entity can be attached with Update(). Unlike ChangeTracker.Clear() it does not
+        /// discard unrelated pending changes of the current unit of work.
+        /// </summary>
+        private void DetachTrackedDuplicate(TEntity entity)
+        {
+            var key = _dbContext.Model.FindEntityType(typeof(TEntity))?.FindPrimaryKey();
+            if (key == null) return;
+
+            var keyValues = key.Properties.Select(p => p.PropertyInfo?.GetValue(entity)).ToArray();
+            foreach (var tracked in _dbContext.ChangeTracker.Entries<TEntity>().ToList())
+            {
+                if (ReferenceEquals(tracked.Entity, entity)) continue;
+                var trackedValues = key.Properties.Select(p => tracked.Property(p.Name).CurrentValue).ToArray();
+                if (keyValues.SequenceEqual(trackedValues))
+                {
+                    tracked.State = EntityState.Detached;
+                }
+            }
+        }
 
         #endregion
 

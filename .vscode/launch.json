@@ -1,0 +1,24 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Proxy Webapi (http :5253)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-webapi",
+      "program": "${workspaceFolder}/App.MinimalApi.Webapi/bin/Debug/net8.0/App.MinimalApi.Webapi.dll",
+      "cwd": "${workspaceFolder}/App.MinimalApi.Webapi",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5253"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "Now listening on: \\\\?\"?(https?://[^\\\\\"\\s]+)",
+        "uriFormat": "%s/swagger"
+      },
+      "justMyCode": true,
+      "stopAtEntry": false
+    }
+  ]
+}

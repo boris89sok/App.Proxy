@@ -18,21 +18,21 @@
                     client.BaseAddress = new Uri(options.CurrentValue.ApiUrl);
                 })
                 .AddHttpMessageHandler<RawLoggingHandler>()
-                .ConfigurePrimaryHttpMessageHandler(() =>
-                {
-                    var handler = new SocketsHttpHandler
-                    {
-                        EnableMultipleHttp2Connections = false,
-                        AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
-                    };
-
-                    handler.SslOptions.RemoteCertificateValidationCallback =
-                        (sender, cert, chain, errors) => true;
-
-                    return handler;
-                });
+                .ConfigurePrimaryHttpMessageHandler(CreatePrimaryHandler);
 
             return services;
         }
+
+        /// <summary>
+        /// DEFECT FIX: the previous handler set RemoteCertificateValidationCallback = (...) => true,
+        /// which disabled TLS certificate validation (any MITM certificate was accepted).
+        /// The default validation is now used.
+        /// </summary>
+        internal static SocketsHttpHandler CreatePrimaryHandler() => new()
+        {
+            EnableMultipleHttp2Connections = false,
+            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+            PooledConnectionLifetime = TimeSpan.FromMinutes(2)
+        };
     }
 }

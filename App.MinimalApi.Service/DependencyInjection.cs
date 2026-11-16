@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using App.MinimalApi.Service.Proxy;
 
 namespace App.MinimalApi.Service
 {
@@ -8,17 +8,13 @@ namespace App.MinimalApi.Service
         {
             var env = configuration["AppSettings:Env"] ?? throw new ArgumentNullException("AppSettings:Env not found in configuration");
 
-            services.AddDbContext<NorthwndContext>(options => options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
-            services.AddOptions<EnvOptions>()
-                .Bind(configuration.GetSection($"AppSettings:{env}"))
-                .ValidateDataAnnotations()
-                .ValidateOnStart();
+            // One options object for the whole application: environment values + proxy settings.
+            services.AddValidatedOptions<EnvOptions>(configuration.GetSection($"AppSettings:{env}"))
+                .Bind(configuration.GetSection(EnvOptions.ProxySectionName));
 
-            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             services.AddHttpClientExtension(configuration);
-            services.AddScoped<ICountryService, CountryService>();
-            services.AddScoped<IRegionRepository, RegionRepository>();
-            services.AddScoped<IRegionService, RegionService>();
+
+            services.AddSecureProxy(configuration);
 
             return services;
         }

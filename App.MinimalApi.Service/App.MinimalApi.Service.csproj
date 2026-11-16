@@ -7,13 +7,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="13.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.9" />
-    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="8.0.0" />
+    <!-- Replaces the legacy Microsoft.AspNetCore.Http.Abstractions 2.3.9 package (ASP.NET Core 2.x) -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="8.10.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Refit.HttpClientFactory" Version="9.0.2" />
     <PackageReference Include="Refit.Newtonsoft.Json" Version="9.0.2" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="App.MinimalApi.Tests" />
   </ItemGroup>
 
   <ItemGroup>

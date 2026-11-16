@@ -3,4 +3,8 @@
   <Project Path="App.MinimalApi.Model/App.MinimalApi.Model.csproj" />
   <Project Path="App.MinimalApi.Service/App.MinimalApi.Service.csproj" />
   <Project Path="App.MinimalApi.Webapi/App.MinimalApi.Webapi.csproj" />
+  <Project Path="App.MinimalApi.Tests/App.MinimalApi.Tests.csproj" />
+  <Folder Name="/tools/">
+    <Project Path="tools/App.MinimalApi.DevTool/App.MinimalApi.DevTool.csproj" />
+  </Folder>
 </Solution>

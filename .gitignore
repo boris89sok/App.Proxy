@@ -480,3 +480,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# local test credentials (never commit)
+local-dev.txt
+local-dev-encrypted.json
